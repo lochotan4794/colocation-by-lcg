@@ -1,0 +1,5 @@
+numpy >= 1.18
+opencv-python >= 4.3.0
+opencv-contrib-python >= 4.3.0
+scikit-learn >= 0.22
+tqdm
