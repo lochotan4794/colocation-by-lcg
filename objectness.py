@@ -184,6 +184,7 @@ print(logs)
 print("Solution is: {}".format(solution))
 plt.plot([i for i in range(len(logs))], logs)
 plt.show()
+plt.savefig("objective_function.png")
 # print('optimal solution {}'.format(res[0]))
 # print('dual_bound {}'.format(res[1]))
 
