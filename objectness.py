@@ -64,7 +64,7 @@ def box_prior(train_data):
     v = []
     for s in saliency:
         # In paper, it is weighted by score, will fix later
-        v.append(np.mean(v))
+        v.append(np.mean(s))
     return np.array(v)
 
 # Co-localization in Real-World Images
@@ -98,8 +98,8 @@ print("Indicator matrix {}".format(I.shape))
 print("Centering projection matrix ...")
 central_matrix = I - (1/nb) * np.dot(vector_one, vector_one.T)
 # nbox is number of box
-mu = 0
-lamda = 0
+mu = 0.5
+lamda = 0.1
 # # define function evaluation oracle
 # X = cls() 
 b = np.ones(shape=(nb, nb))
@@ -120,8 +120,12 @@ tmp = L + mu*A
 #     # print(box_prior)
 #     return np.sum(np.dot(np.dot(z.T, tmp.reshape(-1)), z) - lamda * np.dot(z.T, np.log(box_prior)))
 # print("z shape {}".format(x.shape))
+
 print("L shape {}".format(L.shape))
 print("prior m shape {}".format(box_prior.shape))
+print("A: {}".format(A))
+print("Box prior: {}".format(box_prior))
+print("L: {}".format(L))
 
 def f(x):
     #t1: mdim, nbox
@@ -132,6 +136,7 @@ def f(x):
     t2 = np.dot(t1, x)
     # print("t2.shape = {}".format(t2.shape))
     t3 = t2 - lamda * np.dot(x.T, np.log(box_prior))
+    # print(t3)
     return t3[0,0]
 
 def grad_f(x):
@@ -176,6 +181,7 @@ X0 = np.ones(shape=(nb, 1))
 
 solution, logs = LCG_optimizer(X0, 10, f, grad_f)
 print(logs)
+print("Solution is: {}".format(solution))
 plt.plot([i for i in range(len(logs))], logs)
 plt.show()
 # print('optimal solution {}'.format(res[0]))
