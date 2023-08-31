@@ -15,8 +15,11 @@ import numdifftools as nd
 from displayResult import displayResult
 import math
 
-imgs = ['000003.jpg', '000002.jpg']
-data_dir = '/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+# imgs = ['000003.jpg', '000002.jpg']
+# data_dir = '/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+imgs = ['cat1.jpg', 'cat2.jpg']
+data_dir = '/Users/admin/Documents/Colocalization/examples/'
+
 params = default_params('.')
 # params.cues = ['SS']
 
