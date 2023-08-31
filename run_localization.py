@@ -1,39 +1,47 @@
+from runObjectness import run_objectness
+import cv2
+from defaultParams import default_params
+from drawBoxes import draw_boxes
+from computeObjectnessHeatMap import compute_objectness_heat_map
+import time
 from utils import *
 # load training dataset
 from sklearn.cluster import KMeans
 from sklearn import preprocessing
-from run_optimize import *
+from LCG_optimizer import *
 from spm import * 
 from scipy.optimize import check_grad, approx_fprime
 import numdifftools as nd
+from displayResult import displayResult
+import math
 
-"""
-Generate m candidate box:
-Not yet integrate objectness, use box from dataset instead
-"""
+imgs = ['000003.jpg', '000002.jpg']
+data_dir = '/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+params = default_params('.')
+# params.cues = ['SS']
 
-img_dir = "PC07/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/"
-annot_file = "PC07/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/Annotations/"
+# tic = time.time()
+# boxes = run_objectness(img_example, 10, params)
+# toc = time.time()
 
-train_data, train_label = load_dataset(img_dir, annot_file, 100)
-train_num = len(train_label)
-print("Dataset size {}".format(train_num))
-# load testing dataset
-test_data, test_label = load_dataset(img_dir, annot_file, 100)
-test_num = len(test_label)
-
-# you can construct your own configuration dictionary
-config_dictionary = {
-        'img_dir': "PC07/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/",
-        'annot_file':'PC07/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/Annotations/'
-        }
+# print("%f" % (toc - tic))
+# draw_boxes(img_example, boxes, base_color=(1, 0, 0))
+# compute_objectness_heat_map(img_example, boxes)
 
 # Feature Representation
 # extract dense sift features from training images
+
+# M: number of candidate boxes
+M = 5
+tic = time.time()
+# boxes = run_objectness(img_example, 10, params)
+train_data, box_coordinates = extract_boxes(run_objectness, M, params, data_dir, imgs)
+toc = time.time()
+
 print('Generate box ...')
 x_train = computeSIFT(train_data)
 print("SIFT feature {}".format(len(x_train)))
-x_test = computeSIFT(test_data)
+# x_test = computeSIFT(test_data)
 scale_parameter = 1
 # Commbine 
 all_train_desc = []
@@ -45,9 +53,12 @@ all_train_desc = np.array(all_train_desc)
 # Quantilized
 # distinctive image features from scale-invariant keypoints: https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf
 print("Feature Representation")
+#number of clusters
 k = 10
+# Window size
+L = 2
 kmeans = clusterFeatures(all_train_desc, k)
-train_histo = getHistogramSPM(2, train_data, kmeans, k)
+train_histo = getHistogramSPM(L, train_data, kmeans, k)
 # test_histo = getHistogramSPM(2, test_data, kmeans, k)
 # Pool the sift feature
 # Beyond Bags of Features: Spatial Pyramid Matching for Recognizing Natural Scene Categories  https://inc.ucsd.edu/mplab/users/marni/Igert/Lazebnik_06.pdf
@@ -120,12 +131,8 @@ tmp = L + mu*A
 #     # print(box_prior)
 #     return np.sum(np.dot(np.dot(z.T, tmp.reshape(-1)), z) - lamda * np.dot(z.T, np.log(box_prior)))
 # print("z shape {}".format(x.shape))
-
 print("L shape {}".format(L.shape))
 print("prior m shape {}".format(box_prior.shape))
-print("A: {}".format(A))
-print("Box prior: {}".format(box_prior))
-print("L: {}".format(L))
 
 def f(x):
     #t1: mdim, nbox
@@ -136,7 +143,6 @@ def f(x):
     t2 = np.dot(t1, x)
     # print("t2.shape = {}".format(t2.shape))
     t3 = t2 - lamda * np.dot(x.T, np.log(box_prior))
-    # print(t3)
     return t3[0,0]
 
 def grad_f(x):
@@ -180,30 +186,24 @@ l1Ball = Model_l1_ball(A.shape[1])  # initialize the feasible region as a L1 bal
 X0 = np.ones(shape=(nb, 1))
 
 solution, logs = LCG_optimizer(X0, 10, f, grad_f)
-print(logs)
-print("Solution is: {}".format(solution))
-plt.plot([i for i in range(len(logs))], logs)
-plt.show()
-plt.savefig("objective_function.png")
-# print('optimal solution {}'.format(res[0]))
-# print('dual_bound {}'.format(res[1]))
+# # print(logs)
+# pairs = {'000001.jpg': [[0.0, 0.0, 345.64583333333337, 302.0833333333333, 0.9999999998469948]], '000002.jpg': []}
+# print("solution: {}".format(solution))
+# plt.plot([i for i in range(len(logs))], logs)
+# plt.show()
+# solution = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+# M = 5
+# train_data = [(12, 24, 23, 56) for i in range(10)]
+pairs = {}
+for i in range(len(imgs)):
+    pairs[imgs[i]] = []
 
+for p in range(len(solution)):
+    if solution[p] > 0.8:
+        id = math.floor(p / M)
+        # print(p)
+        # print(id)
+        pairs[imgs[id]].append(box_coordinates[p])
 
-# def predict(data, label, weight):
-#     correct = 0
-#     for i in range(len(data)):
-#         y_est = 1/(1+np.exp(-np.dot(scale_parameter*data[i], weight)))
-#         if y_est > 0.5:
-#             y_est = 1
-#         else:
-#             y_est = 0
-#         if y_est == label[i]:
-#             correct += 1
-#     return correct/len(data)
-
-
-# acc_train = predict(x_train, train_label, res[0])
-# print('accuracy on the training dataset {}'.format(acc_train))
-
-# acc_test = predict(A_test, y_test, res[0])
-# print('accuracy on the testing dataset {}'.format(acc_test))
+print(pairs)
+displayResult(imgs, data_dir, pairs)

@@ -13,6 +13,31 @@ from scipy import stats
 from skimage import io
 from numpy.linalg import inv
 
+
+def round_box(box):
+    xmin, ymin, xmax, ymax, score = box
+    return (int(round(xmin)), int(round(ymin)), int(round(xmax)), int(round(ymax)), score)
+
+def extract_boxes(run_objectness, M, params, data_dir, imgs):
+    box_data = []
+    box_coordinates = []
+    for img in imgs:
+        img_id = data_dir + img
+        img_example = cv2.imread(img_id)[:, :, ::-1]
+        boxes = run_objectness(img_example, M, params)
+        print(boxes)
+        box_coordinates = box_coordinates + boxes.tolist()
+        box_data += boxes_data_from_img(boxes, img_id)
+    return box_data, box_coordinates
+
+def boxes_data_from_img(boxes, img_id):
+    box_data = []
+    img_data = cv2.imread(img_id, cv2.COLOR_BGR2RGB)
+    for box in boxes:
+        xmin, ymin, xmax, ymax, score = round_box(box)
+        box_data.append(img_data[ymin:ymax, xmin:xmax, :])
+    return box_data
+
 """
     function caculate is the discriminative clustering term 
     CM: central projection matrix
@@ -174,7 +199,7 @@ def saliency_map_from_set(imgs):
         # image_distribution=np.zeros((image.shape[0],image.shape[1],3))
         # image_saliency=np.zeros((image.shape[0],image.shape[1],3))
         # image=io.imread(image)
-        # print(image.shape)
+        img_size = image.shape[0] * image.shape[1]
 
         colors=[]
         positions=[]
@@ -205,7 +230,7 @@ def saliency_map_from_set(imgs):
         #         image_uniqueness[row,col]=Uniqueness[i]
         #         image_distribution[row,col]=dist_norm[i]
         #         image_saliency[row,col]=sal[i]
-        maps.append(sal)
+        maps.append(sal / img_size)
     return maps
 
 def compute_purity(C_computed,C_grndtruth,R):
