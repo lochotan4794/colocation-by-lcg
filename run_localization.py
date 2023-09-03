@@ -19,10 +19,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 np.random.seed(34)
 
-# imgs = ['000003.jpg', '000002.jpg']
-# data_dir = '/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
-imgs = ['cat1.jpg', 'cat2.jpg']
-data_dir = '/Users/admin/Documents/Colocalization/examples/'
+imgs = ['000001.jpg', '000003.jpg', '000002.jpg']
+data_dir = '/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+# imgs = ['cat1.jpg', 'cat2.jpg']
+# data_dir = '/Users/admin/Documents/Colocalization/examples/'
 
 params = default_params('.')
 # params.cues = ['SS']
