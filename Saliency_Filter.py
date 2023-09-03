@@ -10,7 +10,11 @@ import argparse
 import cv2
 import numpy as np
 import sys
-
+import segmentImage
+import SaliencyRC
+import cv2
+import numpy as np
+import random
 
 sigmap = 0.25
 sigmac = 20

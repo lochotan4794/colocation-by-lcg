@@ -86,6 +86,7 @@ def LCG_optimizer(initial, max_iter, f, grad_f):
     acc = phi / K
     v = LPSep(cc, cc.shape[0], Xs[-1], y_cache, acc)
     if not isinstance(v, bool):
+      print("new step ...")
       Xs.append(Xs[-1]  + step * (v - Xs[-1]))
     else:
       Xs.append(Xs[-1])

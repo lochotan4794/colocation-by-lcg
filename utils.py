@@ -13,6 +13,14 @@ from scipy import stats
 from skimage import io
 from numpy.linalg import inv
 
+def sqr(x):
+    return x * x
+
+def sqrDist(l1, l2):
+    return np.sum(np.power(np.array(l1,np.float32) - np.array(l2,np.float32),2))
+
+def dist(l1, l2):
+    return np.sqrt(sqrDist(l1, l2))
 
 def round_box(box):
     xmin, ymin, xmax, ymax, score = box
@@ -25,7 +33,6 @@ def extract_boxes(run_objectness, M, params, data_dir, imgs):
         img_id = data_dir + img
         img_example = cv2.imread(img_id)[:, :, ::-1]
         boxes = run_objectness(img_example, M, params)
-        print(boxes)
         box_coordinates = box_coordinates + boxes.tolist()
         box_data += boxes_data_from_img(boxes, img_id)
     return box_data, box_coordinates
@@ -49,18 +56,15 @@ def discriminative_optimial(central_matrix, X, nbox, I, k):
     # print("X shape .{}".format(X.shape))
     # print("I shape .{}".format(I.shape))
     # print("CM shape .{}".format(central_matrix.shape))
-    _in_ = X.T @ central_matrix @ X + nbox * k
+    _in_ = X.T @ central_matrix @ X + nbox * k * I
     I1 = np.identity(X.shape[0])
     _in1_ = I1 - X @ inv(np.matrix(_in_)) @ X.T
     A = (1/nbox) * central_matrix @ _in1_ @ central_matrix 
     return A
 
-def normalize_laplacian(W, nbEigenValues):
+def normalize_laplacian(W):
     # parameters
     offset = .5
-    maxiterations = 100
-    eigsErrorTolerence = 1e-6
-    truncMin = 1e-6
     eps = 2.2204e-16
 
     m = shape(W)[1]
@@ -109,7 +113,6 @@ def load_dataset(img_dir, annot_file, num_per_class=-1):
                 x_max = int(obj.find('.//xmax').text)
                 y_max = int(obj.find('.//ymax').text)
                 data.append(cv2.imread(img_dir + filename, cv2.COLOR_BGR2RGB)[y:y_max, x:x_max, :])
-                # print(cv2.imread(img_dir + filename, cv2.COLOR_RGB2BGR)[y:y_max, x:x_max, :].shape)
             labels.append(1)
             k = k + 1
             continue
@@ -193,45 +196,58 @@ def clusterFeatures(all_train_desc, k):
 def saliency_map_from_set(imgs):
     maps = []
     for image in imgs:
-        # image=io.imread(ipFileName)
-        # print("Image being read.")
-        # image_uniqueness=np.zeros((image.shape[0],image.shape[1],3))
-        # image_distribution=np.zeros((image.shape[0],image.shape[1],3))
-        # image_saliency=np.zeros((image.shape[0],image.shape[1],3))
-        # image=io.imread(image)
-        img_size = image.shape[0] * image.shape[1]
-
-        colors=[]
-        positions=[]
-
-        # print("Started Abstraction.")
-        colors,positions,seg,d_p,o,d_u = abstract(image)
-        # print("Abstraction successful.")
-
-        # print("Started Uniqueness Assignment.")
-        Uniqueness=uniquenessAssignment(colors,positions)
-        U_norm=Uniqueness/max(Uniqueness)
-        # print("Uniqueness Assignment successful.")
-
-        # print("Starting Distribution Assignment.")
-        dist=distributionAssignment(colors,positions)
-        dist_norm=dist/max(dist)
-        # print("Distribution Assignment successful.")
-
-        # print("Starting Saliency Assignment.")
-        sal=saliency_Assignment(U_norm,dist_norm,colors,positions)    
-        # print("Saliency Assignment successful.")
-
-        # for i in range(len(d_p)):
-        #     for k in range(len(d_p[i])):
-                
-        #         row=d_p[i][k][0]
-        #         col=d_p[i][k][1]
-        #         image_uniqueness[row,col]=Uniqueness[i]
-        #         image_distribution[row,col]=dist_norm[i]
-        #         image_saliency[row,col]=sal[i]
-        maps.append(sal / img_size)
+        # img3i = cv2.imread("/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/000003.jpg")
+        img3d = image
+        img3f = img3d.astype(np.float32)
+        img3f *= 1. / 255
+        #sal = SaliencyRC.GetRC(img3f,segK=20,segMinSize=200)
+        start = cv2.getTickCount()
+        sal = SaliencyRC.GetHC(img3f)
+        maps.append(sal)
     return maps
+
+# def saliency_map_from_set(imgs):
+#     maps = []
+#     for image in imgs:
+#         # image=io.imread(ipFileName)
+#         # print("Image being read.")
+#         # image_uniqueness=np.zeros((image.shape[0],image.shape[1],3))
+#         # image_distribution=np.zeros((image.shape[0],image.shape[1],3))
+#         # image_saliency=np.zeros((image.shape[0],image.shape[1],3))
+#         # image=io.imread(image)
+#         img_size = image.shape[0] * image.shape[1]
+
+#         colors=[]
+#         positions=[]
+
+#         # print("Started Abstraction.")
+#         colors,positions,seg,d_p,o,d_u = abstract(image)
+#         # print("Abstraction successful.")
+
+#         # print("Started Uniqueness Assignment.")
+#         Uniqueness=uniquenessAssignment(colors,positions)
+#         U_norm=Uniqueness/max(Uniqueness)
+#         # print("Uniqueness Assignment successful.")
+
+#         # print("Starting Distribution Assignment.")
+#         dist=distributionAssignment(colors,positions)
+#         dist_norm=dist/max(dist)
+#         # print("Distribution Assignment successful.")
+
+#         # print("Starting Saliency Assignment.")
+#         sal=saliency_Assignment(U_norm,dist_norm,colors,positions)    
+#         # print("Saliency Assignment successful.")
+
+#         # for i in range(len(d_p)):
+#         #     for k in range(len(d_p[i])):
+                
+#         #         row=d_p[i][k][0]
+#         #         col=d_p[i][k][1]
+#         #         image_uniqueness[row,col]=Uniqueness[i]
+#         #         image_distribution[row,col]=dist_norm[i]
+#         #         image_saliency[row,col]=sal[i]
+#         maps.append(sal / img_size)
+#     return maps
 
 def compute_purity(C_computed,C_grndtruth,R):
     """

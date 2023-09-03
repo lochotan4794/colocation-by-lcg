@@ -6,7 +6,7 @@ from computeObjectnessHeatMap import compute_objectness_heat_map
 import time
 
 
-img_example = cv2.imread('/Users/admin/Documents/Colocalization/PC07/VOCtest_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/000001.jpg')[:, :, ::-1]
+img_example = cv2.imread('/Users/admin/Documents/Colocalization/examples/cat2.jpg')[:, :, ::-1]
 params = default_params('.')
 # params.cues = ['SS']
 
