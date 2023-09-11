@@ -76,6 +76,7 @@ def LPSep(linear_obj, size, X, cache, acc):
 def LCG_optimizer(initial, max_iter, f, grad_f):
   Xs = [initial]
   f_cache = []
+  f_cache.append(f(Xs[-1]))
   y_cache = []
   K = 1.1
   phi = 0
